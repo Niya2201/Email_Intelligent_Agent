@@ -1,19 +1,29 @@
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
+import streamlit as st
+import json
 import os
 
 SCOPES = ['https://www.googleapis.com/auth/gmail.modify']
 
 def get_gmail_service():
     creds = None
+    
+    # Write credentials.json from Streamlit secrets
+    if "GOOGLE_CREDENTIALS" in st.secrets:
+        with open('credentials.json', 'w') as f:
+            f.write(st.secrets["GOOGLE_CREDENTIALS"])
+    
     if os.path.exists('token.json'):
         creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    
     if not creds or not creds.valid:
         flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
         creds = flow.run_local_server(port=8080)
         with open('token.json', 'w') as token:
             token.write(creds.to_json())
+    
     return build('gmail', 'v1', credentials=creds)
 
 def fetch_emails(service, max_results=5):
